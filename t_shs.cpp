@@ -121,12 +121,13 @@ void t_shs::thread_mbus_h_outputs(modbus_t*& mb)
                 // den neuen Status in die Status-Queue schreiben
                 if (data.impuls) {
                     //const int s = static_cast<int>(status_queue.get_state(data.card_index,data.output_index));
-                    const int s = status_queue.get_state(data.card_index,data.output_index);
-                    status_queue.set_state(data.card_index,data.output_index,(s == 1) ? 0 : 1);
+                    const int s = s_queue.get_state(data.card_index,data.output_index);
+                    s_queue.set_state(data.card_index,data.output_index,(s == 1) ? 0 : 1);
                 }
                 if (data.no_impuls) {
-                    status_queue.set_state(data.card_index,data.output_index,data.status);
+                    s_queue.set_state(data.card_index,data.output_index,data.status);
                 }
+                sq.push(s_queue.cards);
             }
 
             // vor dem naechsten Schreibvorgang 15 Millisekunden warten
@@ -174,7 +175,7 @@ void t_shs::thread_modbus_h_inputs(modbus_t*& mb)
         while(true) {
 
             // alle Relais-Karten durchlaufen und pruefen, ob an einem Eingang ein Signal anliegt
-            for (auto & card : status_queue.cards) {
+            for (auto & card : /* test: 001 status_queue.cards*/s_queue.cards) {
 
                 // nimmt die 8 Zustaende von Eingaengen einer Relais Karte auf
                 uint8_t inputs[8] = {0};
@@ -224,6 +225,7 @@ void t_shs::thread_modbus_h_inputs(modbus_t*& mb)
                         data.output_index = i;
                         data.output_address = i;
                         data.status = status;
+                        data.no_impuls = true;
                         cq.push(data);
 
                         // solange warten bis der Taster losgelassen wurde
@@ -241,12 +243,6 @@ void t_shs::thread_modbus_h_inputs(modbus_t*& mb)
                         } while (status == 1);
 
                         log(t,"INFO","Taster: Signal weg. Kartenadresse " + std::to_string(card.address) + " Eingang Index " + std::to_string(i));
-
-                        // dem Thread mbus-h-outputs Zeit geben um die Status-Queue zu aktualisieren
-                        std::this_thread::sleep_for(std::chrono::milliseconds(50));
-
-                        status_queue.as_json(json_response);
-                        _ws.broadcast_relays_status(json_response.str());
                     }
 
 
@@ -282,12 +278,6 @@ void t_shs::thread_modbus_h_inputs(modbus_t*& mb)
                             cq.push(data);
 
                             log(t,"INFO","Taster: Schaltimpuls gesendet. Kartenadresse " + std::to_string(card.address) + " Ausgang Index " + std::to_string(i));
-
-                            // dem Thread mbus-h-outputs Zeit geben um die Status-Queue zu aktualisieren
-                            std::this_thread::sleep_for(std::chrono::milliseconds(50));
-
-                            status_queue.as_json(json_response);
-                            _ws.broadcast_relays_status(json_response.str());
                         }
                         else { // den Dim-Vorgang starten
 
@@ -317,6 +307,12 @@ void t_shs::thread_modbus_h_inputs(modbus_t*& mb)
                             data.status = 0; // nur den Status anpassen
                             cq.push(data);
                         }
+                    }
+
+                    // die Status-Queue aktualisieren
+                    if (sq.pop_with_timeout(s_queue.cards,0)) {
+                        s_queue.as_json(json_response);
+                        _ws.broadcast_relays_status(json_response.str());
                     }
                 }
             }
@@ -456,10 +452,10 @@ void t_shs::thread_handle_http_request(const int& cs) {
             // den Client f. Push-Benachrichtigungen speichern
             _ws.add_client(cs);
 
-            log(t,"INFO",std::to_string(cs) + " hat eine Web-Socket-Verbindung hergestellt.");
+            log(t,"INFO","Client " + std::to_string(cs) + " hat eine Web-Socket-Verbindung hergestellt.");
 
             // die ganze Status-Queue an den Client senden
-            status_queue.as_json(json_response);
+            //status_queue.as_json(json_response); // test: 001
             if (const long rc = t_web_socket::send_frame(cs,json_response.str()); rc < 0) {
                 log(t,"ERROR","Senden der Status-Queue fehlgeschlagen.");
             }
@@ -478,7 +474,7 @@ void t_shs::thread_handle_http_request(const int& cs) {
 
                 if (!json.empty()) {
 
-                    log(t,"INFO",std::to_string(cs) + " sendet Befehl: " + json);
+                    log(t,"INFO","Client " + std::to_string(cs) + " sendet Befehl: " + json);
 
                     std::map<std::string,std::string> result = t_shs::get_command(json);
 
@@ -546,7 +542,7 @@ void t_shs::thread_handle_http_request(const int& cs) {
                     // todo Eventuell eine Queue?
                     std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
-                    status_queue.as_json(json_response);
+                    //status_queue.as_json(json_response); // test: 001
                     _ws.broadcast_relays_status(json_response.str());
                 }
             }

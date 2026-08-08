@@ -1,27 +1,7 @@
-/*
-#include <iostream>
-#include <thread>
-#include <chrono>
-#include <pthread.h>
-#include <mutex>
-#include <string>
-#include <modbus/modbus.h>
-#include <unistd.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netinet/tcp.h>
-#include <cstring>
-#include "t_log.h"
-#include "t_config.h"
-#include "t_thread_queue.h"
-#include "t_status_queue.h"
-#include "t_waveshare_card.h"
-#include "t_web_socket.h"
-*/
 
 #include "t_shs.h"
 #include <csignal>      // f. SIGINT
-#include <functional>
+#include <functional>   // f. bind_front()
 
 t_shs shs;
 static std::jthread tcp_server_thread;
@@ -59,12 +39,12 @@ int main() {
 
         // den Antwort-Timeout auf 200 Millisekunden setzen
         if (constexpr unsigned int timeout = 200000; shs.modbus_set_response_timeout(mb,timeout) > 1) {
-            shs.log("","INFO","Modbus RTU RS485: Antwort-Timeout wurde auf " + std::to_string(timeout / 100) + " Millisekunden eingestellt.");
+            shs.log("","INFO","Modbus RTU RS485: Antwort-Timeout wurde auf " + std::to_string(timeout / 1000) + " Millisekunden eingestellt.");
         }
 
         // die Status-Queue initialisieren
         t_waveshare_card card(8,8);
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < std::stoi(shs.config.options.at("card_count")); i++) {
 
             card.index = shs.config.card[i].index;
             card.address = shs.config.card[i].address;
@@ -74,7 +54,7 @@ int main() {
                 card.outputs[j].index = j;
             }
 
-            shs.status_queue.cards.push_back(card);
+            shs.s_queue.cards.push_back(card);
         }
 
         // threads starten

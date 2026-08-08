@@ -1,6 +1,3 @@
-//
-// Created by aj on 6/18/26.
-//
 
 #ifndef SHS_T_STATUS_QUEUE_H
 #define SHS_T_STATUS_QUEUE_H
@@ -10,11 +7,14 @@
 #include <vector>
 #include "t_waveshare_card.h"
 
-//typedef std::vector<t_waveshare_card> t_ss;
+typedef std::vector<t_waveshare_card> t_sq;
 
 class t_status_queue {
 
 public:
+
+    t_status_queue();
+    ~t_status_queue();
 
     std::mutex _mutex;
     std::vector<t_waveshare_card> cards;

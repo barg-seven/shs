@@ -30,7 +30,8 @@ class t_shs {
     t_config config;
     t_queue<t_command> cq; // cq = command queue (relay schalten)
     t_queue<t_control_cmd> ccq; // ccq = control command queue (signale verarbeiten)
-    t_status_queue status_queue;
+    t_status_queue s_queue; // s_queue = status queue
+    t_queue<t_sq> sq; // sq = status queue
     std::string logfilename;
     std::stop_token tcp_server_stop;
 

@@ -5,6 +5,11 @@
 #include "t_status_queue.h"
 
 // ----------------------------------------------------------------------------
+t_status_queue::t_status_queue() {}
+// ----------------------------------------------------------------------------
+t_status_queue::~t_status_queue() {}
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
 void t_status_queue::set_state(const int cardIndex, const int outputIndex, const uint8_t status) {
 
     std::lock_guard<std::mutex> lock(_mutex);

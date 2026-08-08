@@ -6,7 +6,6 @@
 #define SHS_T_STATUS_QUEUE_H
 
 #include <mutex>
-#include <string>
 #include <sstream>
 #include <vector>
 #include "t_waveshare_card.h"
@@ -21,7 +20,7 @@ public:
     std::vector<t_waveshare_card> cards;
     void set_state(int cardIndex,int outputIndex,uint8_t status);
     uint8_t get_state(int cardIndex, int outputIndex);
-    void get_all_states_as_json(std::ostringstream& json);
+    void as_json(std::ostringstream& json);
 };
 
 

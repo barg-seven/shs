@@ -26,7 +26,7 @@ class t_waveshare_card {
 
 public:
 
-    t_waveshare_card(const int& inputCount, const int& outputCount);
+    t_waveshare_card(const int& input_count, const int& output_count);
     ~t_waveshare_card();
 
     [[nodiscard]] inline int get_input_count() const {

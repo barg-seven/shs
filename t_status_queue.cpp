@@ -22,7 +22,7 @@ uint8_t t_status_queue::get_state(const int cardIndex, const int outputIndex) {
     return -1; // standardwert, falls noch nicht gelesen
 }
 // ----------------------------------------------------------------------------
-void t_status_queue::get_all_states_as_json(std::ostringstream& json) {
+void t_status_queue::as_json(std::ostringstream& json) {
 
     std::lock_guard<std::mutex> lock(_mutex);
 

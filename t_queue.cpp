@@ -1,9 +1,41 @@
-//
-// Created by aj on 5/31/26.
-//
 
-#include "t_thread_queue.h"
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ###################################################################################
+/*
+#include "t_queue.h"
+*/
 // ----------------------------------------------------------------------------
 /**
  * @brief Speichert einen Befehl in der Thread-Queue.
@@ -16,14 +48,14 @@
  * @author Andreas Jentsch
  * @date 17.06.2026
  */
-void t_thread_queue::push(const t_command& data)
+/*void t_queue::push(const t_command& data)
 {
     std::lock_guard<std::mutex> lock(_mutex);
     _queue.push(data);
 
     // benachrichtigt den wartenden mbus-h-outputs, dasz neue Daten da sind
     _cv.notify_one();
-}
+}*/
 // ----------------------------------------------------------------------------
 /**
  * @brief Holt einen Befehl aus der Thread-Queue.
@@ -38,7 +70,7 @@ void t_thread_queue::push(const t_command& data)
  * @author Andreas Jentsch
  * @date 17.06.2026
  */
-void t_thread_queue::pop(t_command& data)
+/*void t_queue::pop(t_command& data)
 {
     std::unique_lock<std::mutex> lock(_mutex);
     _cv.wait(lock, [this] {
@@ -46,7 +78,7 @@ void t_thread_queue::pop(t_command& data)
     });
     data = _queue.front(); // daten aus der Queue holen
     _queue.pop(); // daten aus der Queue entfernen
-}
+}*/
 // ----------------------------------------------------------------------------
 /**
  * @brief Holt einen Befehl aus der Thread-Queue.
@@ -66,7 +98,7 @@ void t_thread_queue::pop(t_command& data)
  * @author Andreas Jentsch
  * @date 17.06.2026
  */
-bool t_thread_queue::pop_with_timeout(t_command& data, const int timeout)
+/*bool t_queue::pop_with_timeout(t_command& data, const int timeout)
 {
     std::unique_lock<std::mutex> lock(_mutex);
 
@@ -85,3 +117,4 @@ bool t_thread_queue::pop_with_timeout(t_command& data, const int timeout)
 // ----------------------------------------------------------------------------
 // ----------------------------------------------------------------------------
 // ----------------------------------------------------------------------------
+*/

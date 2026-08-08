@@ -42,6 +42,7 @@ void t_config::parse(const std::string& file) {
         throw std::runtime_error("[Fehler] Konfigurationsdatei konnte nicht geoeffnet werden!");
     }
 
+    int ci = 0; // ci = card index
     std::string line;
 
     // als Erstes alle Karten im Vector als Objekt speichern, ohne Inputs
@@ -72,6 +73,7 @@ void t_config::parse(const std::string& file) {
                     t_card c;
                     c.in.resize(8);
 
+                    c.index = ci++;
                     c.address = n;
                     card.push_back(c);
                 }

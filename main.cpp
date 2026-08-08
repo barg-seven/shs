@@ -21,21 +21,21 @@ int main() {
     sigaction(SIGTERM, &sa, nullptr); // systemctl stop
     sigaction(SIGHUP, &sa, nullptr); // systemctl reload: ExecReload=/bin/kill -HUP $MAINPID
 
-    modbus_t* mb; // modbus RTU RS485 (einen Zeiger erzeugen)
-    std::string logline; // zum Speichern einer Zeile im Log
-
-    constexpr auto t = "CCCCCCCCCCCCC: ";
-
     try {
+
+        modbus_t* mb; // modbus RTU RS485 (einen Zeiger erzeugen)
+        std::string logline; // zum Speichern einer Zeile im Log
+
+        constexpr auto t = "Modbus RTU RS485: ";
 
         shs.config.parse("/etc/shs.conf");
         if (const int rc = shs.connect_to_serial_device(mb,logline,400); rc != 0) {
-            shs.log(t,"ERROR","Es konnte keine Verbindung zu " + shs.config.options.at("serial_device") + " hergestellt werden.");
+            shs.log("","ERROR","Es konnte keine Verbindung zu " + shs.config.options.at("serial_device") + " hergestellt werden.");
             return 1;
         }
 
-        shs.log("","INFO","Modbus RTU RS485: Verbindung hergestellt.");
-        shs.log("","INFO",logline);
+        shs.log(t,"INFO","Verbindung hergestellt.");
+        shs.log(t,"INFO",logline);
 
         // den Antwort-Timeout auf 200 Millisekunden setzen
         if (constexpr unsigned int timeout = 200000; shs.modbus_set_response_timeout(mb,timeout) > 1) {

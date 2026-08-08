@@ -120,7 +120,6 @@ void t_shs::thread_mbus_h_outputs(modbus_t*& mb)
 
                 // den neuen Status in die Status-Queue schreiben
                 if (data.impuls) {
-                    //const int s = static_cast<int>(status_queue.get_state(data.card_index,data.output_index));
                     const int s = s_queue.get_state(data.card_index,data.output_index);
                     s_queue.set_state(data.card_index,data.output_index,(s == 1) ? 0 : 1);
                 }

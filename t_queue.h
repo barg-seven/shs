@@ -1,7 +1,6 @@
 
-
-#ifndef SHS_ENHANCED_T_QUEUE_H
-#define SHS_ENHANCED_T_QUEUE_H
+#ifndef SHS_T_QUEUE_H
+#define SHS_T_QUEUE_H
 
 #include <queue>
 #include <mutex>
@@ -101,4 +100,4 @@ bool t_queue<t>::pop_with_timeout(t& data,const int& timeout)
 // ----------------------------------------------------------------------------
 
 
-#endif //SHS_ENHANCED_T_QUEUE_H
+#endif //SHS_T_QUEUE_H

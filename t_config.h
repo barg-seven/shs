@@ -1,6 +1,6 @@
 
-#ifndef SHS_ENHANCED_T_CONFIG_H
-#define SHS_ENHANCED_T_CONFIG_H
+#ifndef SHS_T_CONFIG_H
+#define SHS_T_CONFIG_H
 
 #include <map>
 #include <vector>
@@ -40,4 +40,4 @@ struct t_card
     std::vector<t_in> in;
 };
 
-#endif //SHS_ENHANCED_T_CONFIG_H
+#endif //SHS_T_CONFIG_H

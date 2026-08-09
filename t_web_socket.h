@@ -1,20 +1,11 @@
-//
-// Created by aj on 6/27/26.
-//
 
 #ifndef SHS_T_WEB_SOCKET_H
 #define SHS_T_WEB_SOCKET_H
 
 #include <mutex>
 #include <string>
-#include <sstream>
 #include <vector>
-#include <sys/socket.h>
-#include <unistd.h>
 #include <thread>
-#include <arpa/inet.h> // Für htons (Netzwerk-Byte-Reihenfolge)
-
-
 
 class t_web_socket {
 

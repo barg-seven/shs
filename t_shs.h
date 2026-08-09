@@ -41,7 +41,7 @@ class t_shs {
     void thread_tcp_server(const std::stop_token& stop_token,const int& port);
     void thread_handle_http_request(const int& cs); // cs = client socket
     static std::map<std::string,std::string> get_command(const std::string& json);
-    bool vic_metrics_request(std::istringstream& http_request);
+    static bool vic_metrics_request(std::istringstream& http_request);
     void write(const std::string& type,const std::string& level, const std::string& message,const std::string& debuginfo);
     static std::string get_timestamp();
 

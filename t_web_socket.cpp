@@ -1,8 +1,8 @@
-//
-// Created by aj on 6/27/26.
-//
 
 #include "t_web_socket.h"
+#include <sys/socket.h>
+#include <unistd.h>
+#include <sstream>
 // ----------------------------------------------------------------------------
 t_web_socket::t_web_socket() = default;
 // ----------------------------------------------------------------------------

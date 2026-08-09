@@ -3,14 +3,9 @@
 #include <csignal>      // f. SIGINT
 #include <functional>   // f. bind_front()
 
-t_shs shs;
+static t_shs shs;
 static std::jthread tcp_server_thread;
 static void handle_signals(int sig);
-
-
-std::mutex http_response_lock;
-//t_status_queue status_queue;
-std::mutex web_clients_lock;
 
 int main() {
 

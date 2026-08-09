@@ -11,6 +11,7 @@
 #include <sstream>
 #include <iomanip>
 #include <termios.h>    // f. tcflush()
+#include <pwd.h>        // f. getpwnam()
 // ----------------------------------------------------------------------------
 t_shs::t_shs() {
     _ss = -1;
@@ -163,8 +164,6 @@ void t_shs::thread_modbus_h_inputs(modbus_t*& mb)
     // ps H -C shs -o 'pid tid cmd comm'
     pthread_setname_np(pthread_self(), MBUS_H_INPUTS_THREAD_NAME);
 
-    constexpr auto t = "Taster: ";
-
     try {
 
         int rc; // return code
@@ -186,7 +185,7 @@ void t_shs::thread_modbus_h_inputs(modbus_t*& mb)
                 }
 
                 if (rc == -1) {
-                    log(t,"ERROR","Modbus RTU RS485: Funktion modbus_read_input_bits() Adresse " + std::to_string(card.address) + " Code " + std::string(modbus_strerror(errno)));
+                    log("","ERROR","Modbus RTU RS485: Funktion modbus_read_input_bits() Adresse " + std::to_string(card.address) + " Code " + std::string(modbus_strerror(errno)));
                     //throw std::runtime_error(modbus_strerror(errno));
                 }
 
@@ -197,12 +196,13 @@ void t_shs::thread_modbus_h_inputs(modbus_t*& mb)
                 for (int i = 0; i < 8; ++i) {
 
                     uint8_t status;
+                    constexpr auto t = "Taster: ";
 
                     // wenn der Eingang den Status 1 hat (ein Taster wurde gedrueckt)
                     if (inputs[i] == 1 && card.inputs[i].type == "finder") {
 
                         // einen Eintrag in der Logdatei erzeugen
-                        log(t,"INFO","Taster: Signal liegt an. Kartenadresse " + std::to_string(card.address) + " Eingang Index " + std::to_string(i));
+                        log(t,"INFO","Signal liegt an. Kartenadresse " + std::to_string(card.address) + " Eingang Index " + std::to_string(i));
 
                         {
                             // den aktuellen Zustand des Relais (Outputs) auf der Relais-Karte ermitteln
@@ -211,11 +211,11 @@ void t_shs::thread_modbus_h_inputs(modbus_t*& mb)
                         }
 
                         if (rc == -1) {
-                            log(t,"ERROR","Modbus RTU RS485: Funktion modbus_read_bits() Adresse " + std::to_string(card.address) + " Code " + std::string(modbus_strerror(errno)));
+                            log("","ERROR","Modbus RTU RS485: Funktion modbus_read_bits() Adresse " + std::to_string(card.address) + " Code " + std::string(modbus_strerror(errno)));
                         }
 
                         // nach dem Lesen 15 Millisekunden warten
-                        std::this_thread::sleep_for(std::chrono::milliseconds(15));
+                        //std::this_thread::sleep_for(std::chrono::milliseconds(15));
 
                         status = (status == 0) ? 1 : 0; // invertieren (aus 0 wird 1 und aus 1 wird 0)
 
@@ -237,17 +237,17 @@ void t_shs::thread_modbus_h_inputs(modbus_t*& mb)
                                 rc = modbus_read_input_bits(mb, i, 1, &status);
                             }
                             if (rc == -1) {
-                                log(t,"ERROR","Modbus RTU RS485: Funktion modbus_read_input_bits() Adresse " + std::to_string(card.address) + " Code " + std::string(modbus_strerror(errno)));
+                                log("","ERROR","Modbus RTU RS485: Funktion modbus_read_input_bits() Adresse " + std::to_string(card.address) + " Code " + std::string(modbus_strerror(errno)));
                             }
                         } while (status == 1);
 
-                        log(t,"INFO","Taster: Signal weg. Kartenadresse " + std::to_string(card.address) + " Eingang Index " + std::to_string(i));
+                        log(t,"INFO","Signal weg. Kartenadresse " + std::to_string(card.address) + " Eingang Index " + std::to_string(i));
                     }
 
 
                     if (inputs[i] == 1 && card.inputs[i].type == "eltako") {
 
-                        log(t,"INFO","Taster: Signal liegt an. Kartenadresse " + std::to_string(card.address) + " Eingang Index " + std::to_string(i));
+                        log(t,"INFO","Signal liegt an. Kartenadresse " + std::to_string(card.address) + " Eingang Index " + std::to_string(i));
 
                         // befehl erzeugen
                         data.card_address = card.address;
@@ -261,7 +261,7 @@ void t_shs::thread_modbus_h_inputs(modbus_t*& mb)
                             rc = modbus_read_input_bits(mb, i, 1, &status);
                         }
                         if (rc == -1) {
-                            log(t,"ERROR","Modbus RTU RS485: Funktion modbus_read_input_bits() Kartenadresse " + std::to_string(card.address) + " Code " + std::string(modbus_strerror(errno)));
+                            log("","ERROR","Modbus RTU RS485: Funktion modbus_read_input_bits() Kartenadresse " + std::to_string(card.address) + " Code " + std::string(modbus_strerror(errno)));
                         }
 
                         // der Taster wurde losgelassen, den Eltako mit Impuls schalten
@@ -276,11 +276,11 @@ void t_shs::thread_modbus_h_inputs(modbus_t*& mb)
                             data.status = 0; // nur den Status anpassen
                             cq.push(data);
 
-                            log(t,"INFO","Taster: Schaltimpuls gesendet. Kartenadresse " + std::to_string(card.address) + " Ausgang Index " + std::to_string(i));
+                            log(t,"INFO","Schaltimpuls gesendet. Kartenadresse " + std::to_string(card.address) + " Ausgang Index " + std::to_string(i));
                         }
                         else { // den Dim-Vorgang starten
 
-                            log(t,"INFO","Taster: Dim-Vorgang gestartet. Kartenadresse " + std::to_string(card.address) + " Ausgang Index " + std::to_string(i));
+                            log(t,"INFO","Dim-Vorgang gestartet. Kartenadresse " + std::to_string(card.address) + " Ausgang Index " + std::to_string(i));
 
                             // den Dimm-Vorgang starten
                             data.status = 1; // nur den Status anpassen
@@ -295,12 +295,12 @@ void t_shs::thread_modbus_h_inputs(modbus_t*& mb)
                                     rc = modbus_read_input_bits(mb, i, 1, &status);
                                 }
                                 if (rc == -1) {
-                                    log(t,"ERROR","Modbus RTU RS485: Funktion modbus_read_input_bits() Kartenadresse " + std::to_string(card.address) + " Code " + std::string(modbus_strerror(errno)));
+                                    log("","ERROR","Modbus RTU RS485: Funktion modbus_read_input_bits() Kartenadresse " + std::to_string(card.address) + " Code " + std::string(modbus_strerror(errno)));
                                 }
                             } while (status == 1);
 
-                            log(t,"INFO","Taster: Dim-Vorgang beendet. Kartenadresse " + std::to_string(card.address) + " Ausgang Index " + std::to_string(i));
-                            log(t,"INFO","Taster: Signal weg. Kartenadresse " + std::to_string(card.address) + " Eingang Index " + std::to_string(i));
+                            log(t,"INFO","Dim-Vorgang beendet. Kartenadresse " + std::to_string(card.address) + " Ausgang Index " + std::to_string(i));
+                            log(t,"INFO","Signal weg. Kartenadresse " + std::to_string(card.address) + " Eingang Index " + std::to_string(i));
 
                             // das Relais abschalten
                             data.status = 0; // nur den Status anpassen
@@ -546,7 +546,7 @@ void t_shs::thread_handle_http_request(const int& cs) {
                 }
             }
 
-            log(t,"INFO",std::to_string(cs) + " hat die Web-Socket-Verbindung getrennt.");
+            log(t,"INFO","Client " + std::to_string(cs) + " hat die Web-Socket-Verbindung getrennt.");
 
             // wenn die Schleife beendet ist
             _ws.remove_client(cs);
@@ -689,3 +689,5 @@ std::string t_shs::get_timestamp()
     ss << std::put_time(std::localtime(&in_time_t), "%Y-%m-%d %H:%M:%S");
     return ss.str();
 }
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------

@@ -1,6 +1,3 @@
-//
-// Created by aj on 6/18/26.
-//
 
 #include "t_status_queue.h"
 

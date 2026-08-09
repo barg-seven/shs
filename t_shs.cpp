@@ -5,14 +5,12 @@
 #include <fcntl.h>      // f. fcntl()
 #include <netinet/in.h> // f. struct sockaddr_in
 #include <unistd.h>     // f. close()
-//#include <arpa/inet.h>  // inet_ntoa()
 #include <poll.h>       // struct pollfd fds;
-//#include <cstring>      // strlen()
 #include <iostream>
 #include <sstream>
 #include <iomanip>
 #include <termios.h>    // f. tcflush()
-#include <pwd.h>        // f. getpwnam()
+//#include <pwd.h>        // f. getpwnam()
 // ----------------------------------------------------------------------------
 t_shs::t_shs() {
     _ss = -1;

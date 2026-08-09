@@ -3,7 +3,8 @@
 #include "t_shs.h"
 #include <sys/socket.h> // f. socket()
 #include <fcntl.h>      // f. fcntl()
-#include <netinet/in.h> // struct sockaddr_in
+#include <netinet/in.h> // f. struct sockaddr_in
+#include <unistd.h>     // f. close()
 //#include <arpa/inet.h>  // inet_ntoa()
 #include <poll.h>       // struct pollfd fds;
 //#include <cstring>      // strlen()

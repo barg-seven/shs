@@ -16,9 +16,10 @@ int main() {
     sigaction(SIGTERM, &sa, nullptr); // systemctl stop
     sigaction(SIGHUP, &sa, nullptr); // systemctl reload: ExecReload=/bin/kill -HUP $MAINPID
 
+    modbus_t* mb; // modbus RTU RS485 (einen Zeiger erzeugen)
+
     try {
 
-        modbus_t* mb; // modbus RTU RS485 (einen Zeiger erzeugen)
         std::string logline; // zum Speichern einer Zeile im Log
 
         constexpr auto t = "Modbus RTU RS485: ";
@@ -33,8 +34,8 @@ int main() {
         shs.log(t,"INFO",logline);
 
         // den Antwort-Timeout auf 200 Millisekunden setzen
-        if (constexpr unsigned int timeout = 200000; shs.modbus_set_response_timeout(mb,timeout) > 1) {
-            shs.log("","INFO","Modbus RTU RS485: Antwort-Timeout wurde auf " + std::to_string(timeout / 1000) + " Millisekunden eingestellt.");
+        if (constexpr unsigned int timeout = 200; shs.modbus_set_response_timeout(mb,timeout) > 1) {
+            shs.log("","INFO","Modbus RTU RS485: Antwort-Timeout wurde auf " + std::to_string(timeout) + " Millisekunden eingestellt.");
         }
 
         // die Status-Queue initialisieren
@@ -78,6 +79,9 @@ int main() {
         return 1;
     }
 
+    //modbus_close(mb);
+    //modbus_free(mb);
+
     return 0;
 }
 //-----------------------------------------------------------------------------
@@ -100,6 +104,8 @@ void handle_signals(const int sig) {
         case SIGINT:
         case SIGTERM: { // Strg+C || systemctl stop
             tcp_server_thread.request_stop();
+            shs.thread_mbus_h_inputs_stop = true;
+            shs.thread_mbus_h_outputs_stop = true;
             break;
         }
         case SIGHUP: {

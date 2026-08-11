@@ -7,6 +7,7 @@
 #include <thread>
 #include <mutex>
 #include <modbus/modbus.h>
+#include <atomic>
 #include "t_config.h"
 #include "t_queue.h"
 #include "t_web_socket.h"
@@ -33,8 +34,10 @@ class t_shs {
     t_queue<t_sq> sq; // sq = status queue
     std::string logfilename;
     std::stop_token tcp_server_stop;
+    std::atomic<bool> thread_mbus_h_inputs_stop = false;
+    std::atomic<bool> thread_mbus_h_outputs_stop = false;
 
-    unsigned int modbus_set_response_timeout(modbus_t*& mbus,const unsigned int& to_usec);
+    unsigned int modbus_set_response_timeout(modbus_t*& mbus,const unsigned int& ms);
     int connect_to_serial_device(modbus_t*& mbus,std::string& str,const int& wait) const;
     void thread_mbus_h_outputs(modbus_t*& mb);
     void thread_modbus_h_inputs(modbus_t*& mb);

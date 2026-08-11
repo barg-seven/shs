@@ -24,13 +24,13 @@ t_shs::~t_shs()
     }
 }
 // ----------------------------------------------------------------------------
-unsigned int t_shs::modbus_set_response_timeout(modbus_t*& mbus,const unsigned int& to_usec)
+unsigned int t_shs::modbus_set_response_timeout(modbus_t*& mbus,const unsigned int& ms)
 {
     std::lock_guard<std::mutex> lock(_m_mbus);
-    if (const int rc = ::modbus_set_response_timeout(mbus, 0, to_usec);rc == -1) {
+    if (const int rc = ::modbus_set_response_timeout(mbus, 0, ms * 1000);rc == -1) {
         return 1;
     }
-    return to_usec;
+    return ms;
 }
 // ----------------------------------------------------------------------------
 int t_shs::connect_to_serial_device(modbus_t*& mbus,std::string& str,const int& wait) const
@@ -93,10 +93,12 @@ void t_shs::thread_mbus_h_outputs(modbus_t*& mb)
         t_command data = {};
         const auto t = "Thread " + std::string(MBUS_H_OUTPUTS_THREAD_NAME) + " ";
 
-        while (true) {
+        while (!thread_mbus_h_outputs_stop) {
 
-            // warten bis ein Thread push() aufruft
-            data = cq.pop();
+            // warten bis ein Thread push() aufruft oder der Timeout abgelaufen ist
+            if (!cq.pop_with_timeout(data,0)) {
+                continue;
+            }
 
             // ein Relais schalten
             {
@@ -169,7 +171,7 @@ void t_shs::thread_modbus_h_inputs(modbus_t*& mb)
         t_command data{};
         std::ostringstream json_response; // die Nutzdaten
 
-        while(true) {
+        while(!thread_mbus_h_inputs_stop) {
 
             // alle Relais-Karten durchlaufen und pruefen, ob an einem Eingang ein Signal anliegt
             for (auto & card : /* test: 001 status_queue.cards*/s_queue.cards) {
@@ -322,9 +324,6 @@ void t_shs::thread_modbus_h_inputs(modbus_t*& mb)
     catch (...) {
         log("","ERROR","Exception: Unbekannter Fehler.");
     }
-
-    modbus_close(mb);
-    modbus_free(mb);
 }
 // ----------------------------------------------------------------------------
 /**

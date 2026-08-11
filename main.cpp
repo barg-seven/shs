@@ -79,8 +79,8 @@ int main() {
         return 1;
     }
 
-    //modbus_close(mb);
-    //modbus_free(mb);
+    modbus_close(mb);
+    modbus_free(mb);
 
     return 0;
 }

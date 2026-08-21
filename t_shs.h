@@ -13,13 +13,27 @@
 #include "t_web_socket.h"
 #include "t_status_queue.h"
 
+// threads
 #define NAMELEN 16      // maximale Anzahl f. einen Threadnamen \0
 #define TCP_SERVER_THREAD_NAME "tcp-server"
-#define MBUS_H_INPUTS_THREAD_NAME "mbus-h-inputs"
-#define MBUS_H_OUTPUTS_THREAD_NAME "mbus-h-outputs"
+#define MBUS_READ_THREAD_NAME "mbus-read"
+#define MBUS_WRITE_THREAD_NAME "mbus-write"
+
+// metrics
+const std::string KUTE = "kute"; // ku = kueche & te = temperatur
+const std::string KUHU = "kuhu"; // ku = kueche & hu = feuchtigkeit
+const std::string ANTE = "ante"; // an = anzucht
+const std::string ANHU = "anhu"; // an = anzucht
+const std::string BATE = "bate"; // an = bad
+const std::string BAHU = "bahu"; // an = bad
+const std::string SCTE = "scte"; // an = schlafzimmer
+const std::string SCHU = "schu"; // an = schlafzimmer
+const std::string BUTE = "bute"; // an = buero
+const std::string BUHU = "buhu"; // an = buero
 
 struct t_command;
 struct t_control_cmd;
+struct t_mbus_command;
 
 class t_shs {
 
@@ -29,6 +43,7 @@ class t_shs {
 
     t_config config;
     t_queue<t_command> cq; // cq = command queue (relay schalten)
+    t_queue<t_mbus_command> mbq; // mbq = modbus queue
     t_queue<t_control_cmd> ccq; // ccq = control command queue (signale verarbeiten)
     t_status_queue s_queue; // s_queue = status queue
     t_queue<t_sq> sq; // sq = status queue
@@ -47,6 +62,7 @@ class t_shs {
     static bool vic_metrics_request(std::istringstream& http_request);
     void write(const std::string& type,const std::string& level, const std::string& message,const std::string& debuginfo);
     static std::string get_timestamp();
+    static void help();
 
     private:
     int _ss; // server socket
@@ -93,6 +109,31 @@ struct t_control_cmd {
     explicit t_control_cmd(const int& command) : cmd(-1) {
         cmd = command;
     }
+};
+
+struct t_mbus_command
+{
+    enum t_action {bus_read,bus_write} action;
+
+    struct {
+        int index;
+        int address;
+    } slave;
+    struct {
+        int index;
+        int address;
+        int humidity;
+        int temperature;
+        uint8_t status;
+    } read;
+    struct {
+        int index;
+        int address;
+        bool impuls;
+        bool dim_beg;
+        bool dim_end;
+        uint8_t status;
+    } write;
 };
 
 #define log(type,level,message) write(type,level,message,std::string(__FILE__) + ":" + std::to_string(__LINE__))

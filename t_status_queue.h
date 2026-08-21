@@ -20,7 +20,9 @@ public:
     std::vector<t_waveshare_card> cards;
     void set_state(int cardIndex,int outputIndex,uint8_t status);
     uint8_t get_state(int cardIndex, int outputIndex);
-    void as_json(std::ostringstream& json);
+    std::string as_json();
+    std::string as_json(std::ostringstream& json);
+    static void safe_to_file(const std::string& json);
 };
 
 

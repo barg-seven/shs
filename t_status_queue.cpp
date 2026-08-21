@@ -1,5 +1,6 @@
 
 #include "t_status_queue.h"
+#include <fstream>
 
 // ----------------------------------------------------------------------------
 t_status_queue::t_status_queue() = default;
@@ -24,7 +25,14 @@ uint8_t t_status_queue::get_state(const int cardIndex, const int outputIndex) {
     return -1; // standardwert, falls noch nicht gelesen
 }
 // ----------------------------------------------------------------------------
-void t_status_queue::as_json(std::ostringstream& json) {
+std::string t_status_queue::as_json()
+{
+    std::ostringstream json;
+    as_json(json);
+    return json.str();
+}
+// ----------------------------------------------------------------------------
+std::string t_status_queue::as_json(std::ostringstream& json) {
 
     std::lock_guard<std::mutex> lock(_mutex);
 
@@ -62,4 +70,16 @@ void t_status_queue::as_json(std::ostringstream& json) {
     }
 
     json << "]}"; // schliesst das "cards"-Array und das Haupt-JSON
+
+    return json.str();
 }
+// ----------------------------------------------------------------------------
+void t_status_queue::safe_to_file(const std::string& json)
+{
+    if (std::ofstream f("/var/shs/sq.json"); f.is_open()) {
+        f << json;
+        f.close();
+    }
+}
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------

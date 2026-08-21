@@ -1,13 +1,15 @@
 
 #include "t_shs.h"
+#include "version.h"
 #include <csignal>      // f. SIGINT
 #include <functional>   // f. bind_front()
+#include <iostream>
 
 static t_shs shs;
 static std::jthread tcp_server_thread;
 static void handle_signals(int sig);
 
-int main() {
+int main(int argc,char* argv[]) {
 
     // einige Signale abfangen
     struct sigaction sa = {};
@@ -16,7 +18,9 @@ int main() {
     sigaction(SIGTERM, &sa, nullptr); // systemctl stop
     sigaction(SIGHUP, &sa, nullptr); // systemctl reload: ExecReload=/bin/kill -HUP $MAINPID
 
-    modbus_t* mb; // modbus RTU RS485 (einen Zeiger erzeugen)
+    modbus_t* mb; // modbus RTU RS485
+    bool exception = false;
+    //t_modbus* mb;
 
     try {
 
@@ -26,8 +30,7 @@ int main() {
 
         shs.config.parse("/etc/shs.conf");
         if (const int rc = shs.connect_to_serial_device(mb,logline,400); rc != 0) {
-            shs.log("","ERROR","Es konnte keine Verbindung zu " + shs.config.options.at("serial_device") + " hergestellt werden.");
-            return 1;
+            throw std::runtime_error("Es konnte keine Verbindung zu " + shs.config.options.at("serial_device") + " hergestellt werden.");
         }
 
         shs.log(t,"INFO","Verbindung hergestellt.");
@@ -40,17 +43,18 @@ int main() {
 
         // die Status-Queue initialisieren
         t_waveshare_card card(8,8);
-        for (int i = 0; i < std::stoi(shs.config.options.at("card_count")); i++) {
+        for (unsigned int i = 0; i < shs.config.card.size(); i++) {
+            if (!shs.config.card.at(i).disabled) {
+                card.index = shs.config.card[i].id;
+                card.address = shs.config.card[i].address;
 
-            card.index = shs.config.card[i].index;
-            card.address = shs.config.card[i].address;
+                for (int j = 0; j < card.get_input_count(); j++) {
+                    card.inputs[j].type = shs.config.card[i].in[j].type;
+                    card.outputs[j].index = j;
+                }
 
-            for (int j = 0; j < card.get_input_count(); j++) {
-                card.inputs[j].type = shs.config.card[i].in[j].type;
-                card.outputs[j].index = j;
+                shs.s_queue.cards.push_back(card);
             }
-
-            shs.s_queue.cards.push_back(card);
         }
 
         // threads starten
@@ -70,19 +74,23 @@ int main() {
             _thread_mbus_h_outputs.join();
         }
     }
+    catch (const std::runtime_error& e) {
+        shs.log("","ERROR",e.what());
+        exception = true;
+    }
     catch (std::exception& e) {
         shs.log("","ERROR",e.what());
-        return 1;
+        exception = true;
     }
     catch (...) {
         shs.log("","ERROR","Unbekannter Fehler.");
-        return 1;
+        exception = true;
     }
 
     modbus_close(mb);
     modbus_free(mb);
 
-    return 0;
+    return (exception) ? 1 : 0;
 }
 //-----------------------------------------------------------------------------
 /**

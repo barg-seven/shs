@@ -1,6 +1,3 @@
-//
-// Created by aj on 6/18/26.
-//
 
 #ifndef SHS_T_WAVESHARE_CARD_H
 #define SHS_T_WAVESHARE_CARD_H

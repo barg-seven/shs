@@ -85,18 +85,18 @@ void t_shs::thread_mbus_h_outputs(modbus_t*& mb)
     // unter Linux kann man den Thread mit diesem Befehl beobachten
     // top -H -p $(pgrep shs)
     // ps H -C shs -o 'pid tid cmd comm'
-    pthread_setname_np(pthread_self(), MBUS_H_OUTPUTS_THREAD_NAME);
+    pthread_setname_np(pthread_self(), MBUS_WRITE_THREAD_NAME);
 
     try {
 
         int rc;
         t_command data = {};
-        const auto t = "Thread " + std::string(MBUS_H_OUTPUTS_THREAD_NAME) + " ";
+        const auto t = "Thread " + std::string(MBUS_WRITE_THREAD_NAME) + " ";
 
         while (!thread_mbus_h_outputs_stop) {
 
             // warten bis ein Thread push() aufruft oder der Timeout abgelaufen ist
-            if (!cq.pop_with_timeout(data,0)) {
+            if (!cq.pop_with_timeout(data,70)) {
                 continue;
             }
 
@@ -129,6 +129,7 @@ void t_shs::thread_mbus_h_outputs(modbus_t*& mb)
                     s_queue.set_state(data.card_index,data.output_index,data.status);
                 }
                 sq.push(s_queue.cards);
+                t_status_queue::safe_to_file(s_queue.as_json());
             }
 
             // vor dem naechsten Schreibvorgang 15 Millisekunden warten
@@ -163,7 +164,7 @@ void t_shs::thread_modbus_h_inputs(modbus_t*& mb)
     // unter Linux kann man den Thread mit diesem Befehl beobachten
     // top -H -p $(pgrep shs)
     // ps H -C shs -o 'pid tid cmd comm'
-    pthread_setname_np(pthread_self(), MBUS_H_INPUTS_THREAD_NAME);
+    pthread_setname_np(pthread_self(), MBUS_READ_THREAD_NAME);
 
     try {
 
@@ -174,7 +175,7 @@ void t_shs::thread_modbus_h_inputs(modbus_t*& mb)
         while(!thread_mbus_h_inputs_stop) {
 
             // alle Relais-Karten durchlaufen und pruefen, ob an einem Eingang ein Signal anliegt
-            for (auto & card : /* test: 001 status_queue.cards*/s_queue.cards) {
+            for (auto & card : s_queue.cards) {
 
                 // nimmt die 8 Zustaende von Eingaengen einer Relais Karte auf
                 uint8_t inputs[8] = {0};
@@ -187,7 +188,6 @@ void t_shs::thread_modbus_h_inputs(modbus_t*& mb)
 
                 if (rc == -1) {
                     log("","ERROR","Modbus RTU RS485: Funktion modbus_read_input_bits() Adresse " + std::to_string(card.address) + " Code " + std::string(modbus_strerror(errno)));
-                    //throw std::runtime_error(modbus_strerror(errno));
                 }
 
                 // nach dem Lesen 15 Millisekunden warten
@@ -452,7 +452,7 @@ void t_shs::thread_handle_http_request(const int& cs) {
             log(t,"INFO","Client " + std::to_string(cs) + " hat eine Web-Socket-Verbindung hergestellt.");
 
             // die ganze Status-Queue an den Client senden
-            //status_queue.as_json(json_response); // test: 001
+            s_queue.as_json(json_response);
             if (const long rc = t_web_socket::send_frame(cs,json_response.str()); rc < 0) {
                 log(t,"ERROR","Senden der Status-Queue fehlgeschlagen.");
             }
@@ -480,7 +480,7 @@ void t_shs::thread_handle_http_request(const int& cs) {
                     {
                         std::lock_guard<std::mutex> lock(_m_config);
                         cmd.action = std::stoi(result.at("action"));
-                        cmd.card_index = config.card.at(std::stoi(result.at("card"))).index;
+                        cmd.card_index = config.card.at(std::stoi(result.at("card"))).id;
                         cmd.card_address = config.card.at(std::stoi(result.at("card"))).address;
                         cmd.output_index = std::stoi(result.at("relay"));
                         cmd.output_address = std::stoi(result.at("relay"));
@@ -534,13 +534,6 @@ void t_shs::thread_handle_http_request(const int& cs) {
                         }
                         default: {}
                     }
-
-                    // dem Thread mbus-h-outputs Zeit geben um die Status-Queue zu aktualisieren
-                    // todo Eventuell eine Queue?
-                    std::this_thread::sleep_for(std::chrono::milliseconds(50));
-
-                    //status_queue.as_json(json_response); // test: 001
-                    _ws.broadcast_relays_status(json_response.str());
                 }
             }
 
@@ -556,15 +549,23 @@ void t_shs::thread_handle_http_request(const int& cs) {
 
             if (vic_metrics_request(request)) {
 
-                // mbus abfragen & das ergebnis senden
+                // mbus abfragen & das ergebnis senden mit queue
+                t_mbus_command c = {};
+                c.action = t_mbus_command::bus_read;
+                c.read.status = 0;
+                c.read.address = 0;
+                c.read.index = 0;
 
                 http_response = "HTTP/1.1 200 OK\r\n"
                 "Content-Type: text/plain; version=0.0.4; charset=utf-8\r\n"
                 "Connection: close\r\n"
                 "\r\n"
-                "# HELP kueche_feuchtigkeit_prozent Aktuelle Luftfeuchtigkeit\n"
-                "# TYPE kueche_feuchtigkeit_prozent gauge\n"
-                "kueche_feuchtigkeit_prozent{sensor_id=\"01\",raum=\"Kueche\"} 48.2\n";
+                "# HELP kute Aktuelle Temperatur\n"
+                "# TYPE kute gauge\n"
+                "kute{sensor_id=\"01\",room=\"Kueche\"} 145\n"
+                "# HELP kuhu Aktuelle Luftfeuchtigkeit\n"
+                "# TYPE huhu gauge\n"
+                "kuhu{sensor_id=\"01\",room=\"Kueche\"} 482\n";
                 send(cs, http_response.c_str(), http_response.length(), 0);
             }
             close(cs);
@@ -688,4 +689,7 @@ std::string t_shs::get_timestamp()
     return ss.str();
 }
 // ----------------------------------------------------------------------------
+void t_shs::help() {
+    std::cout << "\n";
+}
 // ----------------------------------------------------------------------------
